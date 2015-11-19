@@ -7,5 +7,7 @@ include("nn_sys.jl")
 @enum Protocol Req=NN_REQ Rep=NN_REP Pull=NN_PULL Push=NN_PUSH Pair=NN_PAIR Bus=NN_BUS Pub=NN_PUB Sub=NN_SUB Surveyor=NN_SURVEYOR Resondent=NN_RESPONDENT
 export Protocol
 
+@enum Transport Inproc=NN_INPROC Ipc=NN_IPC Tcp=NN_TCP Ws=NN_WS Tcpmux=NN_TCPMUX
+export Transport
 
 end

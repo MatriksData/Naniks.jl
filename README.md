@@ -1,5 +1,5 @@
 
-# Nanix - Nanomsg Connector for Julia
+# Naniks - Nanomsg Connector for Julia
 
 An event driven [nanomsg](http://nanomsg.org/) connector for [Julia](http://julialang.org).
 
