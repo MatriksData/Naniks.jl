@@ -61,3 +61,9 @@ const NN_TCPMUX = Cint(-5)
 const NN_WS_MSG_TYPE = Cint(1)
 const NN_WS_MSG_TYPE_TEXT = Cuint(0x01)
 const NN_WS_MSG_TYPE_BINARY = Cuint(0x02)
+
+const NN_TCP_NODELAY = Cint(1)
+
+const NN_POLLIN = Cint(1)
+const NN_POLLOUT = Cint(2)
+const NN_POLL_IN_AND_OUT = NN_POLLIN + NN_POLLOUT
