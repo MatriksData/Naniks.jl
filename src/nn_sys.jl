@@ -2,7 +2,7 @@
 const AF_SP = Cint(1)
 const AF_SP_RAW = Cint(2)
 
-const NN_MSG = Csize_t(19999) # TODO Max val
+const NN_MSG = Csize_t(8192) # TODO Max val
 const NN_REQ_RESEND_IVL = Cint(1)
 
 const NN_PROTO_PIPELINE = Cint(5)
@@ -34,6 +34,7 @@ const NN_SOCKADDR_MAX = Cint(128)
 
 const NN_SOL_SOCKET = Cint(0)
 
+# Socket options
 const NN_LINGER = Cint(1)
 const NN_SNDBUF = Cint(2)
 const NN_RCVBUF = Cint(3)
@@ -50,6 +51,7 @@ const NN_PROTOCOL = Cint(13)
 const NN_IPV4ONLY = Cint(14)
 const NN_SOCKET_NAME = Cint(15)
 
+# send / receive options
 const NN_DONTWAIT = Cint(1)
 
 const NN_INPROC = Cint(-1)
@@ -71,35 +73,63 @@ const NN_POLL_IN_AND_OUT = NN_POLLIN + NN_POLLOUT
 const NN_HAUSNUMERO = Cuint(156384712)
 const nn_errors = Dict(
     # POSIX compliant error codes
-    Cuint(NN_HAUSNUMERO + 1) => "ENOSUP",
-    Cuint(NN_HAUSNUMERO + 2) => "EPROTONOSUPPORT",
-    Cuint(NN_HAUSNUMERO + 3) => "ENOBUFS",
-    Cuint(NN_HAUSNUMERO + 4) => "ENETDOWN",
-    Cuint(NN_HAUSNUMERO + 5) => "EADDRINUSE",
-    Cuint(NN_HAUSNUMERO + 6) => "EADDRNOTAVAIL",
-    Cuint(NN_HAUSNUMERO + 7) => "ECONNREFUSED",
-    Cuint(NN_HAUSNUMERO + 8) => "EINPROGRESS",
-    Cuint(NN_HAUSNUMERO + 9) => "ENOTSOCK",
-    Cuint(NN_HAUSNUMERO + 10) => "EAFNOSUPPORT",
-    Cuint(NN_HAUSNUMERO + 11) => "EPROTO",
-    Cuint(NN_HAUSNUMERO + 12) => "EAGAIN",
-    Cuint(NN_HAUSNUMERO + 13) => "EBADF",
-    Cuint(NN_HAUSNUMERO + 14) => "EINVAL",
-    Cuint(NN_HAUSNUMERO + 15) => "EMFILE",
-    Cuint(NN_HAUSNUMERO + 16) => "EFAULT",
-    Cuint(NN_HAUSNUMERO + 17) => "EACCES",
-    Cuint(NN_HAUSNUMERO + 18) => "ENETRESET",
-    Cuint(NN_HAUSNUMERO + 19) => "ENETUNREACH",
-    Cuint(NN_HAUSNUMERO + 20) => "EHOSTUNREACH",
-    Cuint(NN_HAUSNUMERO + 21) => "ENOTCONN",
-    Cuint(NN_HAUSNUMERO + 22) => "EMSGSIZE",
-    Cuint(NN_HAUSNUMERO + 23) => "ETIMEDOUT",
-    Cuint(NN_HAUSNUMERO + 24) => "ECONNABORTED",
-    Cuint(NN_HAUSNUMERO + 25) => "ECONNRESET",
-    Cuint(NN_HAUSNUMERO + 26) => "ENOPROTOOPT",
-    Cuint(NN_HAUSNUMERO + 27) => "EISCONN",
-    Cuint(NN_HAUSNUMERO + 28) => "ESOCKTNOSUPPORT",
+    Cuint(45)                   => "ENOTSUP",
+    Cuint(NN_HAUSNUMERO + 1)    => "ENOTSUP",
+    Cuint(43)                   => "EPROTONOSUPPORT",
+    Cuint(NN_HAUSNUMERO + 2)    => "EPROTONOSUPPORT",
+    Cuint(55)                   => "ENOBUFS",
+    Cuint(NN_HAUSNUMERO + 3)    => "ENOBUFS",
+    Cuint(50)                   => "ENETDOWN",
+    Cuint(NN_HAUSNUMERO + 4)    => "ENETDOWN",
+    Cuint(5)                    => "EADDRINUSE",
+    Cuint(NN_HAUSNUMERO + 5)    => "EADDRINUSE",
+    Cuint(48)                   => "EADDRNOTAVAIL",
+    Cuint(NN_HAUSNUMERO + 6)    => "EADDRNOTAVAIL",
+    Cuint(61)                   => "ECONNREFUSED",
+    Cuint(NN_HAUSNUMERO + 7)    => "ECONNREFUSED",
+    Cuint(36)                   => "EINPROGRESS",
+    Cuint(NN_HAUSNUMERO + 8)    => "EINPROGRESS",
+    Cuint(38)                   => "ENOTSOCK",
+    Cuint(NN_HAUSNUMERO + 9)    => "ENOTSOCK",
+    Cuint(47)                   => "EAFNOSUPPORT",
+    Cuint(NN_HAUSNUMERO + 10)   => "EAFNOSUPPORT",
+    Cuint(100)                  => "EPROTO",
+    Cuint(NN_HAUSNUMERO + 11)   => "EPROTO",
+    Cuint(35)                   => "EAGAIN",
+    Cuint(NN_HAUSNUMERO + 12)   => "EAGAIN",
+    Cuint(9)                    => "EBADF",
+    Cuint(NN_HAUSNUMERO + 13)   => "EBADF",
+    Cuint(22)                   => "EINVAL",
+    Cuint(NN_HAUSNUMERO + 14)   => "EINVAL",
+    Cuint(24)                   => "EMFILE",
+    Cuint(NN_HAUSNUMERO + 15)   => "EMFILE",
+    Cuint(14)                   => "EFAULT",
+    Cuint(NN_HAUSNUMERO + 16)   => "EFAULT",
+    Cuint(13)                   => "EACCES",
+    Cuint(NN_HAUSNUMERO + 17)   => "EACCES",
+    Cuint(52)                   => "ENETRESET",
+    Cuint(NN_HAUSNUMERO + 18)   => "ENETRESET",
+    Cuint(51)                   => "ENETUNREACH",
+    Cuint(NN_HAUSNUMERO + 19)   => "ENETUNREACH",
+    Cuint(65)                   => "EHOSTUNREACH",
+    Cuint(NN_HAUSNUMERO + 20)   => "EHOSTUNREACH",
+    Cuint(57)                   => "ENOTCONN",
+    Cuint(NN_HAUSNUMERO + 21)   => "ENOTCONN",
+    Cuint(40)                   => "EMSGSIZE",
+    Cuint(NN_HAUSNUMERO + 22)   => "EMSGSIZE",
+    Cuint(60)                   => "ETIMEDOUT",
+    Cuint(NN_HAUSNUMERO + 23)   => "ETIMEDOUT",
+    Cuint(53)                   => "ECONNABORTED",
+    Cuint(NN_HAUSNUMERO + 24)   => "ECONNABORTED",
+    Cuint(54)                   => "ECONNRESET",
+    Cuint(NN_HAUSNUMERO + 25)   => "ECONNRESET",
+    Cuint(42)                   => "ENOPROTOOPT",
+    Cuint(NN_HAUSNUMERO + 26)   => "ENOPROTOOPT",
+    Cuint(56)                   => "EISCONN",
+    Cuint(NN_HAUSNUMERO + 27)   => "EISCONN",
+    Cuint(44)                   => "ESOCKTNOSUPPORT",
+    Cuint(NN_HAUSNUMERO + 28)   => "ESOCKTNOSUPPORT",
     # Native nanomsg error codes
-    Cuint(NN_HAUSNUMERO + 53) => "ETERM",
-    Cuint(NN_HAUSNUMERO + 54) => "EFSM"
+    Cuint(NN_HAUSNUMERO + 53)   => "ETERM",
+    Cuint(NN_HAUSNUMERO + 54)   => "EFSM"
 )

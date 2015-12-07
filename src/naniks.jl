@@ -12,11 +12,9 @@ export Transport, Inproc, Ipc, Tcp, Ws, Tcpmux
 
 error_message(prefix::ASCIIString="") = begin
     err = ccall((:nn_errno, libnn), Cint, ())
-    if haskey(nn_errors, err)
-        error("Socket creation error: " * nn_errors(err))
-    else
-        error("Unknown error code " * string(err))
-    end
+    code = haskey(nn_errors, err) ? nn_errors(err) : ""
+    str = ccall((:strerror, "libc"), Ptr{UInt8}, (Cint,), err)
+    error(prefix * code * " - " * bytesstring(str))
 end
 
 type Socket
@@ -36,7 +34,7 @@ type Socket
     end
 end
 
-function nn_bind(socket::Socket, url::ASCIIString)
+function bind(socket::Socket, url::ASCIIString)
     id = ccall((:nn_bind, libnn), Cint, (Cint, Ptr{UInt8}), socket.id, url)
     if id < 0
         throw(error_message("Socket creation error: "))
@@ -45,7 +43,7 @@ function nn_bind(socket::Socket, url::ASCIIString)
     socket
 end
 
-function nn_connect(socket::Socket, url::ASCIIString)
+function connect(socket::Socket, url::ASCIIString)
     id = ccall((:nn_connect, libnn), Cint, (Cint, Ptr{UInt8}), socket.id, url)
     if id < 0
         throw(error_message("Socket creation error: "))
@@ -54,7 +52,60 @@ function nn_connect(socket::Socket, url::ASCIIString)
     socket
 end
 
-export Socket, nn_bind, nn_connect
+function listener(socket::Socket, f::Function)
+    buff = Array(UInt8, NN_MSG)
+    while true
+        len = ccall((:nn_recv, libnn), Cint, (Cint, Ptr{UInt8}, Csize_t, Cint),
+            socket.id, buff, NN_MSG, NN_DONTWAIT)
+        if len < 0
+            err = ccall((:nn_errno, libnn), Cint, ())
+            if haskey(nn_errors, err) && nn_errors[err] == "EAGAIN"
+                sleep(0.005)
+            else
+                println(error_message("Message receive: "))
+            end
+            continue
+        end
+        msg = Array{UInt8}(len)
+        copy!(msg, 1, buff, 1, len)
+        f(msg)
+        yield()
+    end
+end
 
+function on_message(socket::Socket, f::Function)
+    _listener = @task listener(socket, f)
+    @async yieldto(_listener)
+end
+
+function send(socket::Socket, message::Array{UInt8},
+    offset::Integer=1, len::Integer=length(message))
+    ret = ccall((:nn_send, libnn), Cint, (Cint, Ptr{UInt8}, Csize_t, Cint),
+            socket.id, Ref(message, offset), Csize_t(len), 0)
+    if (ret < 0)
+        println(error_message("Could not send the message: "))
+    end
+end
+
+function send(socket::Socket, message::ASCIIString)
+    msg = convert(Array{UInt8}, message)
+    send(socket, msg, 1, length(msg))
+end
+
+function close(socket::Socket)
+    ret = ccall((:nn_close, libnn), Cint, (Cint,), socket.id)
+    if (ret < 0)
+        println(error_message("Could not close the socker: "))
+    end
+end
+
+function shutdown(socket::Socket)   # TODO parameter 'how'
+    ret = ccall((:nn_shutdown, libnn), Cint, (Cint, Cint), socket.id, 0)
+    if (ret < 0)
+        println(error_message("Could not shutdown the socker: "))
+    end
+end
+
+export Socket, bind, connect, on_message, send, shutdown
 
 end
