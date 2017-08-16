@@ -3,13 +3,12 @@ using Base.Test
 include("../src/naniks.jl")
 using NN
 
-socket = Socket(Pull)
-NN.bind(socket, "tcp://127.0.0.1:3000")
+socket = Socket(Bus)
+NN.bind(socket, "tcp://127.0.0.1:3009")
 
-recv(msg) = println(bytestring(msg))
+recv(msg) = println(convert(String, msg)
 
-on_message(socket, recv)
-
-println("Sleeping...")
-sleep(24)
-println("i'm back")
+rx = socket.rx
+#while true
+    take!(rx)
+#end

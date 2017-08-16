@@ -14,46 +14,49 @@ error_message(prefix::String="") = begin
     err = ccall((:nn_errno, libnn), Cint, ())
     code = haskey(nn_errors, err) ? nn_errors(err) : ""
     str = ccall((:strerror, "libc"), Ptr{UInt8}, (Cint,), err)
-    error(prefix * code * " - " * bytesstring(str))
+    error(prefix * string(err) * code * " - " * unsafe_string(str))
 end
 
 mutable struct Socket
     domain::Cint
     protocol::Protocol
     id::Cint
+    rx::Channel{Array{UInt8}}
+    tx::Channel{Array{UInt8}}
     endpoint_id::Cint
 
     Socket(p::Protocol) = Socket(AF_SP, p)
     Socket(is_raw::Bool, p::Protocol) = Socket(is_raw ? AF_SP_RAW : AF_SP, p)
     Socket(domain::Cint, p::Protocol) = begin
+        sz = 1024
         s = ccall((:nn_socket, libnn), Cint, (Cint, Cint,), domain, p)
-        if s < 0
-            throw(error_message("Socket creation error: "))
-        end
-        new(domain, p, s)
+        s < 0 && throw(error_message("Socket creation error: "))
+        r = Channel{Array{UInt8}}(sz)
+        t = Channel{Array{UInt8}}(sz)
+        new(domain, p, s, r, t)
     end
 end
 
 function bind(socket::Socket, url::String)
     id = ccall((:nn_bind, libnn), Cint, (Cint, Ptr{UInt8}), socket.id, url)
-    if id < 0
-        throw(error_message("Socket creation error: "))
-    end
+    id < 0 && throw(error_message("Socket creation error: "))
     socket.endpoint_id = id
+    @schedule listener(socket)
+    @schedule sender(socket)
     socket
 end
 
 function connect(socket::Socket, url::String)
     id = ccall((:nn_connect, libnn), Cint, (Cint, Ptr{UInt8}), socket.id, url)
-    if id < 0
-        throw(error_message("Socket creation error: "))
-    end
+    id < 0 && throw(error_message("Socket creation error: "))
     socket.endpoint_id = id
+    @schedule listener(socket)
+    @schedule sender(socket)
     socket
 end
 
-function listener(socket::Socket, f::Function)
-    buff = Array(UInt8, NN_MSG)
+function listener(socket::Socket)
+    buff = Array{UInt8}(NN_MSG)
     while true
         len = ccall((:nn_recv, libnn), Cint, (Cint, Ptr{UInt8}, Csize_t, Cint),
             socket.id, buff, NN_MSG, NN_DONTWAIT)
@@ -68,28 +71,18 @@ function listener(socket::Socket, f::Function)
         end
         msg = Array{UInt8}(len)
         copy!(msg, 1, buff, 1, len)
-        f(msg)
-        yield()
+        put!(socket.rx, msg)
     end
 end
 
-function on_message(socket::Socket, f::Function)
-    _listener = @task listener(socket, f)
-    @async yieldto(_listener)
-end
-
-function send(socket::Socket, message::Array{UInt8},
-    offset::Integer=1, len::Integer=length(message))
-    ret = ccall((:nn_send, libnn), Cint, (Cint, Ptr{UInt8}, Csize_t, Cint),
-            socket.id, Ref(message, offset), Csize_t(len), 0)
-    if (ret < 0)
-        println(error_message("Could not send the message: "))
+function sender(socket::Socket)
+    offset = 1
+    while true
+        message = take!(socket.tx)    
+        ret = ccall((:nn_send, libnn), Cint, (Cint, Ptr{UInt8}, Csize_t, Cint),
+                socket.id, Ref(message, offset), Csize_t(length(message)), 0)
+        ret < 0 && println(error_message("Could not send the message: "))
     end
-end
-
-function send(socket::Socket, message::String)
-    msg = convert(Array{UInt8}, message)
-    send(socket, msg, 1, length(msg))
 end
 
 function close(socket::Socket)
@@ -106,6 +99,6 @@ function shutdown(socket::Socket)   # TODO parameter 'how'
     end
 end
 
-export Socket, bind, connect, on_message, send, shutdown
+export Socket, bind, connect, send, shutdown
 
 end             # module NN
