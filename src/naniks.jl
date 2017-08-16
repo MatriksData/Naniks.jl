@@ -10,14 +10,14 @@ export Protocol, Rep, Req, Pull, Push, Pair, Bus, Pub, Sub, Surveyor, Respondent
 @enum Transport Inproc=NN_INPROC Ipc=NN_IPC Tcp=NN_TCP Ws=NN_WS Tcpmux=NN_TCPMUX
 export Transport, Inproc, Ipc, Tcp, Ws, Tcpmux
 
-error_message(prefix::ASCIIString="") = begin
+error_message(prefix::String="") = begin
     err = ccall((:nn_errno, libnn), Cint, ())
     code = haskey(nn_errors, err) ? nn_errors(err) : ""
     str = ccall((:strerror, "libc"), Ptr{UInt8}, (Cint,), err)
     error(prefix * code * " - " * bytesstring(str))
 end
 
-type Socket
+mutable struct Socket
     domain::Cint
     protocol::Protocol
     id::Cint
@@ -34,7 +34,7 @@ type Socket
     end
 end
 
-function bind(socket::Socket, url::ASCIIString)
+function bind(socket::Socket, url::String)
     id = ccall((:nn_bind, libnn), Cint, (Cint, Ptr{UInt8}), socket.id, url)
     if id < 0
         throw(error_message("Socket creation error: "))
@@ -43,7 +43,7 @@ function bind(socket::Socket, url::ASCIIString)
     socket
 end
 
-function connect(socket::Socket, url::ASCIIString)
+function connect(socket::Socket, url::String)
     id = ccall((:nn_connect, libnn), Cint, (Cint, Ptr{UInt8}), socket.id, url)
     if id < 0
         throw(error_message("Socket creation error: "))
@@ -87,7 +87,7 @@ function send(socket::Socket, message::Array{UInt8},
     end
 end
 
-function send(socket::Socket, message::ASCIIString)
+function send(socket::Socket, message::String)
     msg = convert(Array{UInt8}, message)
     send(socket, msg, 1, length(msg))
 end
@@ -108,4 +108,4 @@ end
 
 export Socket, bind, connect, on_message, send, shutdown
 
-end
+end             # module NN
