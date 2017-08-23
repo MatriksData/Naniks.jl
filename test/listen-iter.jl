@@ -7,7 +7,6 @@ socket = NN.Socket(NN.Bus)
 NN.bind(socket, "tcp://127.0.0.1:2000")
 
 println("Binded")
-while true
-    raw = NN.take!(socket)
-    println(String(raw))
+for msg in socket
+    println(String(msg))
 end

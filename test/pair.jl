@@ -1,19 +1,20 @@
-include("../src/naniks.jl")
-
-using NN
+include("../src/Naniks.jl")
 
 const url = "inproc://a"
 
-sb = Socket(NN.Pair)
-sc = Socket(NN.Pair)
+bytes(s) = convert(Array{UInt8,1}, s)
+
+sb = NN.Socket(NN.Pair)
+sc = NN.Socket(NN.Pair)
 NN.bind(sb, url)
 NN.connect(sc, url)
 
-on_message(sb, (data) -> println("SB: " * bytestring(data)))
-on_message(sc, (data) -> println("SC: " * bytestring(data)))
+NN.put!(sb, bytes("ABC"))
+NN.put!(sc, bytes("DEF"))
 
-NN.send(sb, "ABC")
-NN.send(sc, "DEF")
+println("SC: " * String(NN.take!(sc)))
+println("SB: " * String(NN.take!(sb)))
+
 
 sleep(1)
 
