@@ -44,7 +44,7 @@ macro listenerfn()
             const buff_ref = pointer(buff)
             #flags = Cint(0)
             flags = NN_DONTWAIT
-            const EAGAIN = Cint(11)
+            #const EAGAIN = Cint(11)
             const IDLE = 0.005
             while true
                 len = ccall((:nn_recv, libnn), Cint, (Cint, Ptr{Void}, Csize_t, Cint),
@@ -52,7 +52,7 @@ macro listenerfn()
                 #len > 0 && println("msg sz: " * string(len))
                 if len < 0
                     err = ccall((:nn_errno, libnn), Cint, ())
-                    if err == EAGAIN
+                    if err == Libc.EAGAIN
                         sleep(IDLE)
                     else
                         println(error_message("Message receive " * string(len) * ": "))
