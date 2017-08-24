@@ -122,4 +122,7 @@ end             # module NN
 
 module Naniks
 
+using NN
+export NN
+
 end
