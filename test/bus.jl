@@ -1,7 +1,7 @@
 using Base.Test
 include("../src/Naniks.jl")
 
-byres(s) = convert(Array{UInt8,1}, s)
+bytes(s) = convert(Array{UInt8,1}, s)
 
 const addr_a = "inproc://a"
 const addr_b = "inproc://b"
@@ -17,9 +17,9 @@ NN.bind(bus2, addr_b)
 NN.connect(bus3, addr_a)
 NN.connect(bus3, addr_b)
 
-NN.put!(bus1, byres("A"))
-NN.put!(bus2, byres("AB"))
-NN.put!(bus3, byres("ABC"))
+NN.put!(bus1, bytes("A"))
+NN.put!(bus2, bytes("AB"))
+NN.put!(bus3, bytes("ABC"))
 
 msg1 = NN.take!(bus3)
 println(msg1)
