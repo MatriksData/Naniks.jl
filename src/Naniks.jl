@@ -117,12 +117,6 @@ function send(socket::Socket, msg::String)
     return len
 end
 
-_nn_errno() = ccall((:nn_errno, Libc), Cint, ())
-
-_nn_recv(s::Cint, buf::Ptr{Void}, len::Csize_t, flags::Cint) = ccall((:nn_recv, libnn), Cint, (Cint,Ptr{Void},Csize_t,Cint), s, buf, len, flags)
-
-_nn_freemsg(buf::Ptr{Void}) = ccall((:nn_freemsg, LIB), Cint, (Ptr{Void},), buf)
-
 #
 function Base.put!(socket::Socket, data::Array{UInt8})
     ret = ccall((:nn_send, libnn), Cint, (Cint, Ptr{UInt8}, Csize_t, Cint),
