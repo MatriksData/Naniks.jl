@@ -81,10 +81,47 @@ function connect(socket::Socket, url::String)
     eid = ccall((:nn_connect, libnn), Cint, (Cint, Cstring), socket.id, url)
     eid < 0 && throw(error_message("Socket creation error: "))
     socket.endpoint_id = eid
-    @async remote_do(@listenerfn(), rand(1:nprocs()), socket)
+    if socket.protocol != Req
+	       @async remote_do(@listenerfn(), rand(1:nprocs()), socket)
+    end
     sleep(0.1)
     socket
 end
+
+function recv(socket::Socket)
+    buff = Array{UInt8}(NN_MSG)
+    const buff_ref = pointer(buff)
+    len = ccall((:nn_recv, libnn), Cint, (Cint, Ptr{Void}, Csize_t, Cint), socket.id, buff_ref, NN_MSG, Int32(0))
+	if len < 0
+        	err = ccall((:nn_errno, libnn), Cint, ())
+        	println(error_message("Message receive " * string(len) * ": "))
+        	return nothing
+    end
+    msg = Array{UInt8}(len)
+    copy!(msg, 1, buff, 1, len)
+    return msg
+end
+
+function send(socket::Socket, msg::String)
+    size = convert(Csize_t, length(msg))
+    msg_ptr = pointer(msg)
+    len = ccall((:nn_send, libnn), Cint, (Cint,Ptr{Void},Csize_t,Cint), socket.id, convert(Ptr{Void}, msg_ptr), size, Int32(0))
+    if len == -1
+        throw(error_message("Socket send failed"))
+    end
+
+    if size != len
+    	throw(error_message("Socket sent bytes $len != $size failed"))
+    end
+
+    return len
+end
+
+_nn_errno() = ccall((:nn_errno, Libc), Cint, ())
+
+_nn_recv(s::Cint, buf::Ptr{Void}, len::Csize_t, flags::Cint) = ccall((:nn_recv, libnn), Cint, (Cint,Ptr{Void},Csize_t,Cint), s, buf, len, flags)
+
+_nn_freemsg(buf::Ptr{Void}) = ccall((:nn_freemsg, LIB), Cint, (Ptr{Void},), buf)
 
 #
 function Base.put!(socket::Socket, data::Array{UInt8})
