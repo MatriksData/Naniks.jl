@@ -113,7 +113,6 @@ function send(socket::Socket, msg::String)
     if size != len
     	throw(error_message("Socket sent bytes $len != $size failed"))
     end
-
     return len
 end
 
