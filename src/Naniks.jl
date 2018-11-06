@@ -59,9 +59,15 @@ macro listenerfn()
                     end
                     continue
                 end
-                msg = Array{UInt8}(len)
-                copy!(msg, 1, buff, 1, len)
-                Base.put!(socket.rx, msg)
+		try
+			msg = Array{UInt8}(len)
+			copy!(msg, 1, buff, 1, len)
+			Base.put!(socket.rx, msg)				
+	        catch ex
+			println(ex)
+			println(len)		
+			continue
+                end 
             end
         end
     end
