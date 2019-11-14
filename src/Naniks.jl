@@ -1,5 +1,7 @@
 module NN
 
+using Libdl
+
 const libnn = "libnanomsg"
 Libdl.dlopen(libnn)
 include("nn_sys.jl")
