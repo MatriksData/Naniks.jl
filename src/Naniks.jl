@@ -1,6 +1,6 @@
 module NN
 
-using Libdl
+#using Libdl
 
 const libnn = "libnanomsg"
 Libdl.dlopen(libnn)
