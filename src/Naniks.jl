@@ -31,7 +31,7 @@ mutable struct Socket
     Socket(p::Protocol) = Socket(AF_SP, p)
     Socket(is_raw::Bool, p::Protocol) = Socket(is_raw ? AF_SP_RAW : AF_SP, p)
     Socket(domain::Cint, p::Protocol) = begin
-        sz = 1024
+        sz = 1024 * 1024 * 1024
         s = ccall((:nn_socket, libnn), Cint, (Cint, Cint,), domain, p)
         s < 0 && throw(error_message("Socket creation error: "))
         r = RemoteChannel(()->Channel{Array{UInt8}}(sz))
